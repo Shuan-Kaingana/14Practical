@@ -6,11 +6,23 @@ import java.text.*;
 import java.util.*;
 
 public class HashingPractical {
-    public static int N = 1>>20; // 1 million
+    public static int N = 1<<20;
+    
+    static class KeyValuePair {
+        String key;
+        String value;
+        
+        KeyValuePair(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+    
     public static void main(String args[]){
     
-    //THis is the Array of the (key, value) pairs for the hash table
-    ArrayList<Node> hashTable = new ArrayList<>(N);
+        // Generate the key-value pairs
+        KeyValuePair[] data = setupData();
+        int dataSize = 950000;
 
     DecimalFormat twoD = new DecimalFormat("0.00");
     DecimalFormat fourD = new DecimalFormat("0.0000");
@@ -56,4 +68,29 @@ public class HashingPractical {
     System.out.println();
     System.out.println();
     }	
+    
+    // Setup method to generate key-value pairs
+    public static KeyValuePair[] setupData() {
+        KeyValuePair[] pairs = new KeyValuePair[N];
+        Integer[] keys = new Integer[N];
+        for (int i = 0; i < N; i++) {
+            keys[i] = i;
+        }
+        
+        Random random = new Random();
+        for (int i = N - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            Integer temp = keys[i];
+            keys[i] = keys[j];
+            keys[j] = temp;
+        }
+        
+        for (int i = 0; i < N; i++) {
+            String key = "key_" + keys[i];
+            String value = String.valueOf(i + 1);
+            pairs[i] = new KeyValuePair(key, value);
+        }
+        
+        return pairs;
+    }
 }

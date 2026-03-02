@@ -1,102 +1,140 @@
 import java.util.*;
 
-public class OpenHash<K, V> {
-        private static class Entry<K, V> {
-            K key;
-            V value;
+public class OpenHash {
+    private static class Entry {
+        String key;
+        String value;
 
-            @SuppressWarnings("unused")
-            Entry(K key, V value) {
-                this.key   = key;
-                this.value = value;
+        Entry(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + key + " -> " + value + ")";
+        }
+    }
+
+    // Fields for the hash table
+    private static final int DEFAULT_CAPACITY = 16;
+    private static final double DEFAULT_LOAD_FACTOR = 0.75;
+
+    private LinkedList<Entry>[] buckets;
+    private int size;
+    private int capacity;
+    private double loadFactor;
+
+    public OpenHash() {
+        this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
+    }
+
+    @SuppressWarnings("unchecked")
+    public OpenHash(int capacity, double loadFactor) {
+        this.capacity = capacity;
+        this.loadFactor = loadFactor;
+        this.buckets = new LinkedList[capacity];
+        this.size = 0;
+    }
+
+    public int hash(String key) {
+        if (key == null) {
+            return 0;
+        }
+        return Math.abs(key.hashCode()) % capacity;
+    }
+
+    public void insert(String key, String value) {
+        if (key == null) {
+            return;
+        }
+        
+        int index = hash(key);
+        if (buckets[index] == null) {
+            buckets[index] = new LinkedList<>();
+        }
+        
+        for (Entry entry : buckets[index]) {
+            if (entry.key.equals(key)) {
+                entry.value = value;
+                return;
             }
-            @Override
-            public String toString() {
-                return "(" + key + " -> " + value + ")";
-            }
         }
 
-        //fields for the hash table
-        private static final int    DEFAULT_CAPACITY    = 16;
-        private static final double DEFAULT_LOAD_FACTOR = 0.75;
-        private LinkedList<Entry<K, V>>[] buckets;
-        private final int capacity;
-        private final double loadFactor;
-        private int size;
+        buckets[index].add(new Entry(key, value));
+        size++;
+    }
 
-        // constructors
-        public OpenHash() {
-            this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
+    public String lookup(String key) {
+        if (key == null) {
+            return null;
         }
-
-        @SuppressWarnings("unchecked")
-        public OpenHash(int capacity, double loadFactor) {
-            this.capacity = capacity;
-            this.loadFactor = loadFactor;
-            this.buckets = new LinkedList[capacity];
-            this.size = 0;
-        }
-
-
-        //hash function
-        private int hash(K key) {
-            if (key == null) return 0;
-            return Math.abs(key.hashCode()) % capacity;
-        }
-
-        private void insert(K key, V value) {
-            int index = hash(key);
-            if (buckets[index] == null) {
-                buckets[index] = new LinkedList<>();
-            }
-            for (Entry<K, V> entry : buckets[index]) {
+        
+        int index = hash(key);
+        if (buckets[index] != null) {
+            for (Entry entry : buckets[index]) {
                 if (entry.key.equals(key)) {
-                    entry.value = value; // Update existing key
-                    return;
-                }
-            }
-            buckets[index].add(new Entry<>(key, value)); // Add new key-value pair
-            size++;
-        }
-
-        private V search(K key) {
-            int index = hash(key);
-            if (buckets[index] != null) {
-                for (Entry<K, V> entry : buckets[index]) {
-                    if (entry.key.equals(key)) {
-                        return entry.value; // Key found
-                    }
-                }
-            }
-            return null; // Key not found
-        }
-
-        private void remove(K key) {
-            int index = hash(key);
-            if (buckets[index] != null) {
-                Iterator<Entry<K, V>> iterator = buckets[index].iterator();
-                while (iterator.hasNext()) {
-                    Entry<K, V> entry = iterator.next();
-                    if (entry.key.equals(key)) {
-                        iterator.remove(); // Remove the entry
-                        size--;
-                        return;
-                    }
+                    return entry.value;
                 }
             }
         }
+        return null;
+    }
 
-        private boolean isEmpty() {
-            return size == 0;
+    public String remove(String key) {
+        if (key == null) {
+            return null;
         }
-
-        private boolean isFull() {
-            return size >= capacity * loadFactor;
+        
+        int index = hash(key);
+        if (buckets[index] != null) {
+            Iterator<Entry> iterator = buckets[index].iterator();
+            while (iterator.hasNext()) {
+                Entry entry = iterator.next();
+                if (entry.key.equals(key)) {
+                    String value = entry.value;
+                    iterator.remove();
+                    size--;
+                    return value;
+                }
+            }
         }
+        return null;
+    }
 
-        private isInTable(K key) {
-            return search(key) != null;
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    public boolean isFull() {
+        return size >= capacity * loadFactor;
+    }
+
+    public boolean isInTable(String key) {
+        return lookup(key) != null;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("OpenHash[capacity=").append(capacity).append(", size=").append(size).append("]\n");
+        for (int i = 0; i < capacity; i++) {
+            if (buckets[i] != null && !buckets[i].isEmpty()) {
+                sb.append("Bucket[").append(i).append("]: ");
+                for (Entry entry : buckets[i]) {
+                    sb.append(entry).append(" ");
+                }
+                sb.append("\n");
+            }
         }
-
-
+        return sb.toString();
+    }
 }
