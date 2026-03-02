@@ -38,9 +38,15 @@ public class HashingPractical {
     for(repetition = 0; repetition < repetitions; repetition++) {
         start = System.currentTimeMillis();
             
-        /*
-        Call your method / s here. For example:
-         */
+        OpenHash openHash = new OpenHash();
+        for (int i = 0; i < dataSize; i++) {
+            openHash.insert(data[i].key, data[i].value);
+        }
+
+        ChainedHash chainedHash = new ChainedHash();
+        for (int i = 0; i < dataSize; i++) {
+            chainedHash.insert(data[i].key, data[i].value);
+        }
             
         finish = System.currentTimeMillis();
                 

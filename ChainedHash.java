@@ -29,17 +29,36 @@ public class ChainedHash {
         this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
-    public ChainedHash(int defaultCapacity, double defaultLoadFactor) {
-        this.capacity = defaultCapacity;
-        this.loadFactor = defaultLoadFactor;
+    public ChainedHash(int capacity, double loadFactor) {
+        this.capacity = capacity;
+        this.loadFactor = loadFactor;
         this.table = new Entry[capacity];
         this.size = 0;
     }
+
     public int hash(String key) {
         if (key == null) {
             return 0;
         }
         return Math.abs(key.hashCode()) % capacity;
+    }
+
+    private int probe(int index, String key) {
+        int i = index;
+        int count = 0;
+        
+        while (count < capacity) {
+            if (table[i] == null || table[i].isDeleted) {
+                return i;
+            }
+            if (table[i].key.equals(key)) {
+                return i;
+            }
+            i = (i + 1) % capacity;
+            count++;
+        }
+        
+        return -1;
     }
 
     public void insert(String key, String value) {
@@ -48,19 +67,18 @@ public class ChainedHash {
         }
         
         int index = hash(key);
-        if (buckets[index] == null) {
-            buckets[index] = new LinkedList<>();
-        }
+        int probeIndex = probe(index, key);
         
-        for (Entry entry : buckets[index]) {
-            if (entry.key.equals(key)) {
-                entry.value = value;
-                return;
-            }
+        if (probeIndex == -1) {
+            System.err.println("Hash table is full!");
+            return;
         }
-
-        buckets[index].add(new Entry(key, value));
-        size++;
+        if (table[probeIndex] != null && !table[probeIndex].isDeleted) {
+            table[probeIndex].value = value;
+        } else {
+            table[probeIndex] = new Entry(key, value);
+            size++;
+        }
     }
 
     public String lookup(String key) {
@@ -69,13 +87,22 @@ public class ChainedHash {
         }
         
         int index = hash(key);
-        if (buckets[index] != null) {
-            for (Entry entry : buckets[index]) {
-                if (entry.key.equals(key)) {
-                    return entry.value;
-                }
+        int i = index;
+        int count = 0;
+        
+        while (count < capacity) {
+            if (table[i] == null) {
+                return null;
             }
+            
+            if (!table[i].isDeleted && table[i].key.equals(key)) {
+                return table[i].value;
+            }
+
+            i = (i + 1) % capacity;
+            count++;
         }
+
         return null;
     }
 
@@ -85,21 +112,26 @@ public class ChainedHash {
         }
         
         int index = hash(key);
-        if (buckets[index] != null) {
-            Iterator<Entry> iterator = buckets[index].iterator();
-            while (iterator.hasNext()) {
-                Entry entry = iterator.next();
-                if (entry.key.equals(key)) {
-                    String value = entry.value;
-                    iterator.remove();
-                    size--;
-                    return value;
-                }
+        int i = index;
+        int count = 0;
+        
+        while (count < capacity) {
+            if (table[i] == null) {
+                return null;
             }
+            
+            if (!table[i].isDeleted && table[i].key.equals(key)) {
+                String value = table[i].value;
+                table[i].isDeleted = true;
+                size--;
+                return value;
+            }
+
+            i = (i + 1) % capacity;
+            count++;
         }
         return null;
     }
-
     public boolean isEmpty() {
         return size == 0;
     }
@@ -120,17 +152,21 @@ public class ChainedHash {
         return capacity;
     }
 
+    public double getLoadFactor() {
+        return (double) size / capacity;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("OpenHash[capacity=").append(capacity).append(", size=").append(size).append("]\n");
+        sb.append("ClosedHash[capacity=").append(capacity)
+          .append(", size=").append(size)
+          .append(", load_factor=").append(String.format("%.2f", getLoadFactor()))
+          .append("]\n");
+        
         for (int i = 0; i < capacity; i++) {
-            if (buckets[i] != null && !buckets[i].isEmpty()) {
-                sb.append("Bucket[").append(i).append("]: ");
-                for (Entry entry : buckets[i]) {
-                    sb.append(entry).append(" ");
-                }
-                sb.append("\n");
+            if (table[i] != null && !table[i].isDeleted) {
+                sb.append("[").append(i).append("]: ").append(table[i]).append("\n");
             }
         }
         return sb.toString();
