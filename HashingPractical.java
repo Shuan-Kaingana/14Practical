@@ -3,10 +3,14 @@
 //E1  Prac vanue
 
 import java.text.*;
+import java.util.*;
 
 public class HashingPractical {
-    public static int N = (int) Math.pow(20, 2);
+    public static int N = 1>>20; // 1 million
     public static void main(String args[]){
+    
+    //THis is the Array of the (key, value) pairs for the hash table
+    ArrayList<Node> hashTable = new ArrayList<>(N);
 
     DecimalFormat twoD = new DecimalFormat("0.00");
     DecimalFormat fourD = new DecimalFormat("0.0000");
